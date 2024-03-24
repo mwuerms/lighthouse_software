@@ -26,6 +26,9 @@ uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
+#define USB_UART_TEMP_STR_BUFFER_SIZE	(64)
+static char usb_uart_temp_str_buffer[USB_UART_TEMP_STR_BUFFER_SIZE];
+
 static void interrupt_handler(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
@@ -124,15 +127,36 @@ void usb_uart_print_message(char *msg) {
         // error, device is not ready
         return;
     }
-
-    int rb_len = ring_buf_put(&ringbuf, msg, strlen(msg));
-    printk("tty fifo -> ringbuf %d bytes", rb_len);
+	int rb_len = 0;
+    rb_len +ring_buf_put(&ringbuf, msg, strlen(msg));
     if (rb_len) {
         uart_irq_tx_enable(usb_uart_dev);
     }
     return;
 }
 
-void usb_uart_print_adv_data(void) {
+static const char str_new_line_cr_lf[] = {0x0D, 0x0A, 0x00};
+void usb_uart_print_adv_data(char* msg, char* addr_str, int8_t rssi, uint8_t *adv_data, uint16_t adv_len) {
+    if (!device_is_ready(usb_uart_dev)) {
+        // error, device is not ready
+        return;
+    }
+	int rb_len = 0;
+	
+    rb_len += ring_buf_put(&ringbuf, msg, strlen(msg));
+	rb_len += ring_buf_put(&ringbuf, addr_str, strlen(addr_str));
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, ", rssi: %02d, adv_data (hex, %02d):", rssi, adv_len);
+	rb_len += ring_buf_put(&ringbuf, usb_uart_temp_str_buffer, strlen(usb_uart_temp_str_buffer));
+	uint16_t n;
+	for(n = 0; n < adv_len; n++) {
+		snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "%02X", adv_data[n]);
+		rb_len += ring_buf_put(&ringbuf, usb_uart_temp_str_buffer, strlen(usb_uart_temp_str_buffer));
+	}
+	// add new line
+	rb_len += ring_buf_put(&ringbuf, str_new_line_cr_lf, strlen(str_new_line_cr_lf));
+    if (rb_len) {
+        uart_irq_tx_enable(usb_uart_dev);
+    }
     return;
+
 }

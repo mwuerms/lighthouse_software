@@ -25,6 +25,10 @@ static void start_scan(void);
 
 static struct bt_conn *default_conn;
 
+static int16_t filter_adv_data(struct net_buf_simple *ad) {
+	return 1; // OK
+}
+
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
@@ -41,27 +45,15 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
+	if(filter_adv_data(ad) == 0) {
+		// not my data, continue looking
+		return;
+	}
+
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+	usb_uart_print_adv_data("Adv_data: ", addr_str, rssi, ad->data, ad->len);
 }
-#if 0
-	/* connect only to devices in close proximity */
-	if (rssi < -70) {
-		return;
-	}
-
-	if (bt_le_scan_stop()) {
-		return;
-	}
-
-	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
-	if (err) {
-		printk("Create conn to %s failed (%d)\n", addr_str, err);
-		start_scan();
-	}
-}
-#endif
 
 static void start_scan(void)
 {
@@ -130,7 +122,9 @@ int main(void)
 	int err;
 	
 	usb_uart_start();
-	usb_uart_print_message("jetzt aber\n");
+	usb_uart_print_message("this is test_central, looking for adv data, filter and print\n");
+	//usb_uart_print_message(model);
+	usb_uart_print_message("\n\n");
 
 	err = bt_enable(NULL);
 	if (err) {
