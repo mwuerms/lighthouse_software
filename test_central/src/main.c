@@ -19,6 +19,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/byteorder.h>
 
+#include "usb_uart.h"
+
 static void start_scan(void);
 
 static struct bt_conn *default_conn;
@@ -41,7 +43,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-
+}
+#if 0
 	/* connect only to devices in close proximity */
 	if (rssi < -70) {
 		return;
@@ -58,6 +61,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		start_scan();
 	}
 }
+#endif
 
 static void start_scan(void)
 {
@@ -124,6 +128,9 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 int main(void)
 {
 	int err;
+	
+	usb_uart_start();
+	usb_uart_print_message("jetzt aber\n");
 
 	err = bt_enable(NULL);
 	if (err) {
