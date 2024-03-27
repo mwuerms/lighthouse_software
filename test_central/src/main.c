@@ -39,16 +39,16 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	/* We're only interested in connectable events */
+	/* We're only interested in connectable events * /
 	if (type != BT_GAP_ADV_TYPE_ADV_IND &&
 	    type != BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
 		return;
-	}
+	}*/
 
-	if(filter_adv_data(ad) == 0) {
+	/*if(filter_adv_data(ad) == 0) {
 		// not my data, continue looking
 		return;
-	}
+	}*/
 
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
@@ -60,7 +60,8 @@ static void start_scan(void)
 	int err;
 
 	/* This demo doesn't require active scan */
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	//err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
 		return;
