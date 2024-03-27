@@ -14,30 +14,26 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#include "buoy_adv_data.h"
+
+// - compile advertising data for buoy beacon
+// #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#define DEVICE_NAME "buoy_beacon"
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 
-/*
- * Set Advertisement data. Based on the Eddystone specification:
- * https://github.com/google/eddystone/blob/master/protocol-specification.md
- * https://github.com/google/eddystone/tree/master/eddystone-url
- */
-static const struct bt_data ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0xaa, 0xfe),
-	BT_DATA_BYTES(BT_DATA_SVC_DATA16,
-		      0xaa, 0xfe, /* Eddystone UUID */
-		      0x10, /* Eddystone-URL frame type */
-		      0x00, /* Calibrated Tx power at 0m */
-		      0x00, /* URL Scheme Prefix http://www. */
-		      'z', 'e', 'p', 'h', 'y', 'r',
-		      'p', 'r', 'o', 'j', 'e', 'c', 't',
-		      0x08) /* .org */
+// static array, little endian
+static struct buoy_adv_data_version_01_struct buoy_adv_data = {
+	.length = BUOY_ADV_DATA_VERSION_01_LENGTH,
+	.version = BUOY_ADV_DATA_VERSION_01,
+	.serial_number = 0xABCD,
+	.interrupt_counter = 1234,
+	.input_states = 0x0001,
+	.vbat_mV = 3300,
 };
 
-/* Set Scan Response data */
-static const struct bt_data sd[] = {
+static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
+	BT_DATA(BT_DATA_MANUFACTURER_DATA, (uint8_t *)&buoy_adv_data, sizeof(buoy_adv_data)),
 };
 
 static void bt_ready(int err)
@@ -54,8 +50,16 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	/* Start advertising */
+#if 0
 	err = bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+#endif
+	// start advertising without scan response
+	err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -71,14 +75,14 @@ static void bt_ready(int err)
 	bt_id_get(&addr, &count);
 	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
 
-	printk("Beacon started, advertising as %s\n", addr_s);
+	printk("BUOY Beacon started, advertising as %s\n", addr_s);
 }
 
 int main(void)
 {
 	int err;
 
-	printk("Starting Beacon Demo\n");
+	printk("Starting RARARA Beacon Demo\n");
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
