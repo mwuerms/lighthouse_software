@@ -21,3 +21,6 @@
 		compatible = "zephyr,cdc-acm-uart";
 	};
 };
+&rtc0 {
+	status = "okay";
+};

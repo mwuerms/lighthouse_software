@@ -20,6 +20,7 @@
 #include <zephyr/sys/byteorder.h>
 
 #include "usb_uart.h"
+#include "timestamp.h"
 #include "buoy_adv_data.h"
 
 static void start_scan(void);
@@ -95,7 +96,11 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-	usb_uart_print_adv_data("Adv_data: ", addr_str, rssi, ad->data, ad->len);
+
+	//usb_uart_print_adv_data("Adv_data: ", addr_str, rssi, ad->data, ad->len);
+	uint32_t now_s, now_ms;
+	timestamp_get_counter(&now_s, &now_ms);
+	usb_uart_print_adv_data_timestamp(now_s, now_ms, "Adv_data: ", addr_str, rssi, ad->data, ad->len);
 }
 
 static void start_scan(void)
@@ -169,6 +174,9 @@ int main(void)
 	usb_uart_print_message("this is test_central, looking for buoy adv data, filter and print\n");
 	//usb_uart_print_message(model);
 	usb_uart_print_message("\n\n");
+
+	timestamp_start_counter();
+	//usb_uart_print_data_types();
 
 	err = bt_enable(NULL);
 	if (err) {

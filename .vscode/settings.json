@@ -5,7 +5,8 @@
   "nrf-connect.applications": [
     "${workspaceFolder}/sw/buoy_beacon",
     "${workspaceFolder}/test_central",
-    "${workspaceFolder}/buoy_beacon"
+    "${workspaceFolder}/buoy_beacon",
+    "${workspaceFolder}/alarm"
   ],
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",

@@ -14,5 +14,6 @@ void usb_uart_stop(void);
 void usb_uart_print_data_types(void);
 void usb_uart_print_message(char *msg);
 void usb_uart_print_adv_data(char* msg, char* addr_str, int8_t rssi, uint8_t *adv_data, uint16_t adv_len);
+void usb_uart_print_adv_data_timestamp(uint32_t now_s, uint32_t now_ms, char* msg, char* addr_str, int8_t rssi, uint8_t *adv_data, uint16_t adv_len);
 
 #endif // _USB_UART_H

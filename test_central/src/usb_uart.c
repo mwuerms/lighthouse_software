@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/device.h>
 //#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
@@ -18,10 +17,14 @@
 
 #include "usb_uart.h"
 
+// do NOT use printk
+//#include <zephyr/sys/printk.h>
+#define printk(...)
+
 // - private functions --------------------------------------
 const struct device *usb_uart_dev;
 
-#define RING_BUF_SIZE 1024
+#define RING_BUF_SIZE (1024UL*2)
 uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
@@ -119,7 +122,36 @@ void usb_uart_stop(void) {
 }
 
 void usb_uart_print_data_types(void) {
-    return;
+	usb_uart_print_message("print data types\n");
+
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "char, min: %d, max: %d, nb bytes %d\n", CHAR_MIN, CHAR_MAX, sizeof(char));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+    
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "int, min: %d, max: %d, nb bytes %d\n", INT_MIN, INT_MAX, sizeof(int));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+    
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "long int, min: %ld, max: %ld, nb bytes %d\n", LONG_MIN, LONG_MAX, sizeof(long int));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+    
+	//snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "float, min: %f, max: %f, nb bytes %d\n", FLT_MIN, FLT_MAX, sizeof(float));
+	//usb_uart_print_message(usb_uart_temp_str_buffer);
+
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "int8_t, min: %d, max: %d, nb bytes %d\n", INT8_MIN, INT8_MAX, sizeof(int8_t));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "uint8_t, min: %d, max: %d, nb bytes %d\n", 0, UINT8_MAX, sizeof(uint8_t));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "uint16_t, min: %d, max: %d, nb bytes %d\n", 0, UINT16_MAX, sizeof(uint16_t));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+    
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "uint32_t, min: %d, max: %ld, nb bytes %d\n", 0, UINT32_MAX, sizeof(uint32_t));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "uint64_t, min: %d, max: %lld, nb bytes %d\n", 0, UINT64_MAX, sizeof(uint64_t));
+	usb_uart_print_message(usb_uart_temp_str_buffer);
+
+	return;
 }
 
 void usb_uart_print_message(char *msg) {
@@ -128,7 +160,7 @@ void usb_uart_print_message(char *msg) {
         return;
     }
 	int rb_len = 0;
-    rb_len +ring_buf_put(&ringbuf, msg, strlen(msg));
+    rb_len += ring_buf_put(&ringbuf, msg, strlen(msg));
     if (rb_len) {
         uart_irq_tx_enable(usb_uart_dev);
     }
@@ -157,6 +189,17 @@ void usb_uart_print_adv_data(char* msg, char* addr_str, int8_t rssi, uint8_t *ad
     if (rb_len) {
         uart_irq_tx_enable(usb_uart_dev);
     }
-    return;
+}
 
+void usb_uart_print_adv_data_timestamp(uint32_t now_s, uint32_t now_ms, char* msg, char* addr_str, int8_t rssi, uint8_t *adv_data, uint16_t adv_len) {
+    if (!device_is_ready(usb_uart_dev)) {
+        // error, device is not ready
+        return;
+    }
+	int rb_len = 0;
+	
+	snprintf(usb_uart_temp_str_buffer, USB_UART_TEMP_STR_BUFFER_SIZE, "%d.%03d: ", now_s, now_ms);
+	rb_len += ring_buf_put(&ringbuf, usb_uart_temp_str_buffer, strlen(usb_uart_temp_str_buffer));
+
+	usb_uart_print_adv_data(msg, addr_str, rssi, adv_data, adv_len);
 }
