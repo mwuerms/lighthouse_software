@@ -22,6 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "buttons.h"
+#include "scheduler.h"
 
 /* USER CODE END Includes */
 
@@ -80,6 +82,34 @@ static void MX_ADC1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+// - main task -----------------------------------------------------------------
+static int8_t main_task_func(uint8_t event, void *data);
+static task_t main_task = {.name = "MAIN", .task = main_task_func};
+int8_t main_tid;
+static volatile uint16_t main_cnt = 0;
+static int8_t main_task_func(uint8_t event, void *data) {
+	if(event == MAIN_EV_BUTTON0) {
+		main_cnt++;
+	}
+	if(event == MAIN_EV_BUTTON1) {
+		main_cnt++;
+	}
+	if(event == MAIN_EV_BUTTON2) {
+		main_cnt++;
+	}
+	if(event == MAIN_EV_BUTTON3) {
+		main_cnt++;
+	}
+	if(event == MAIN_EV_BUTTON4) {
+		main_cnt++;
+	}
+
+	if(event == MAIN_EV_USR_BUTTON) {
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
+	}
+	return 1; // stay on
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -122,6 +152,22 @@ int main(void)
   MX_ADC1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+
+  scheduler_init();
+  power_mode_request(POWER_MODE_NONE);
+
+  scheduler_add_task(&main_task);
+  main_tid = main_task.tid;
+  scheduler_start_task(main_tid);
+
+  buttons_init();
+  buttons_enable_irq();
+
+  scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
+  scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
+
+  // stay in scheduler
+  scheduler_run();
 
   /* USER CODE END 2 */
 
@@ -596,7 +642,19 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SPI1_NSS_Pin|SPI1_NSS1_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SPI1_NSS2_GPIO_Port, SPI1_NSS2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : USR_BTN_Pin IS_SDB_Pin IS_INTB_Pin RTC_INT_Pin */
+  GPIO_InitStruct.Pin = USR_BTN_Pin|IS_SDB_Pin|IS_INTB_Pin|RTC_INT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SPI1_NSS_Pin SPI1_NSS1_Pin SPI1_NSS2_Pin */
   GPIO_InitStruct.Pin = SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin;
@@ -609,15 +667,35 @@ static void MX_GPIO_Init(void)
                            BTN4_Pin */
   GPIO_InitStruct.Pin = BTN0_Pin|BTN1_Pin|BTN2_Pin|BTN3_Pin
                           |BTN4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : IS_SDB_Pin IS_INTB_Pin RTC_INT_Pin */
-  GPIO_InitStruct.Pin = IS_SDB_Pin|IS_INTB_Pin|RTC_INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  /*Configure GPIO pin : USR_LED_Pin */
+  GPIO_InitStruct.Pin = USR_LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(USR_LED_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

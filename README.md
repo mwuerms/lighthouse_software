@@ -2,9 +2,42 @@
 
 a light alarm clock
 
-## Lighthouse
+## lh1
 
-the light alarm clock
++ 1st version for light house
++ git@github.com:mwuerms/lighthouse_software.git
+
+### planing
+
+1. [scheduler](git@github.com:mwuerms/mmscheduler.git)
+2. buttons to test mmscheduler
+3. front display, so I can see something
+4. int RTC
+5. ext RTC
+6. power_modes
+
+#### modules
+
++ front display
+  + red led driver
+  + RH sensor SHTC3
+    + I2C1
++ back display
+  + red, yellow led driver
+    + I2C1
+  + white leds
+    + PWM
++ base
+  + ext RTC
+    + I2C1
+  + int RTC
+  + sound
+    + USART2
+  + USB CDC
+  + BLE central
+  + log, mem
+    + SPI1
+  + buttons
 
 ## buoy
 

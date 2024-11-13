@@ -56,9 +56,21 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+// - main task -----------------------------------------------------------------
+extern int8_t main_tid; // task ID
+#define MAIN_EV_BUTTON0 (1)
+#define MAIN_EV_BUTTON1 (2)
+#define MAIN_EV_BUTTON2 (3)
+#define MAIN_EV_BUTTON3 (4)
+#define MAIN_EV_BUTTON4 (5)
+#define MAIN_EV_USR_BUTTON (6)
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define USR_BTN_Pin GPIO_PIN_13
+#define USR_BTN_GPIO_Port GPIOC
+#define USR_BTN_EXTI_IRQn EXTI15_10_IRQn
 #define RTC_CLK_Pin GPIO_PIN_0
 #define RTC_CLK_GPIO_Port GPIOC
 #define VBAT_Pin GPIO_PIN_2
@@ -79,10 +91,15 @@ void Error_Handler(void);
 #define BLE_RX_GPIO_Port GPIOC
 #define BTN0_Pin GPIO_PIN_0
 #define BTN0_GPIO_Port GPIOB
+#define BTN0_EXTI_IRQn EXTI0_IRQn
 #define BTN1_Pin GPIO_PIN_1
 #define BTN1_GPIO_Port GPIOB
+#define BTN1_EXTI_IRQn EXTI1_IRQn
 #define BTN2_Pin GPIO_PIN_2
 #define BTN2_GPIO_Port GPIOB
+#define BTN2_EXTI_IRQn EXTI2_IRQn
+#define USR_LED_Pin GPIO_PIN_13
+#define USR_LED_GPIO_Port GPIOB
 #define IS_SDB_Pin GPIO_PIN_6
 #define IS_SDB_GPIO_Port GPIOC
 #define IS_INTB_Pin GPIO_PIN_7
@@ -95,8 +112,10 @@ void Error_Handler(void);
 #define SPI1_NSS2_GPIO_Port GPIOA
 #define BTN3_Pin GPIO_PIN_3
 #define BTN3_GPIO_Port GPIOB
+#define BTN3_EXTI_IRQn EXTI3_IRQn
 #define BTN4_Pin GPIO_PIN_4
 #define BTN4_GPIO_Port GPIOB
+#define BTN4_EXTI_IRQn EXTI4_IRQn
 #define DBG_TX_Pin GPIO_PIN_6
 #define DBG_TX_GPIO_Port GPIOB
 #define DBG_RX_Pin GPIO_PIN_7
