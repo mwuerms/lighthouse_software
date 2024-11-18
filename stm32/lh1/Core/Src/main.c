@@ -22,8 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "buttons.h"
 #include "scheduler.h"
+#include "buttons.h"
+#include "leds.h"
 
 /* USER CODE END Includes */
 
@@ -87,6 +88,11 @@ static int8_t main_task_func(uint8_t event, void *data);
 static task_t main_task = {.name = "MAIN", .task = main_task_func};
 int8_t main_tid;
 static volatile uint16_t main_cnt = 0;
+static uint8_t time_cnt = 0;
+static uint8_t day_mask = 0x01;
+static uint8_t disp_colon = 1;
+static volatile uint8_t test_pwm = 10;
+
 static int8_t main_task_func(uint8_t event, void *data) {
 	if(event == MAIN_EV_BUTTON0) {
 		main_cnt++;
@@ -106,6 +112,17 @@ static int8_t main_task_func(uint8_t event, void *data) {
 
 	if(event == MAIN_EV_USR_BUTTON) {
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
+
+		leds_front_display_time(time_cnt, time_cnt, (disp_colon & 0x01), day_mask, test_pwm);
+		disp_colon++;
+		time_cnt += 11;
+		if(time_cnt > 99) {
+			time_cnt = 0;
+		}
+		day_mask <<= 1;
+		if(day_mask > 0x7F) {
+			day_mask = 0x01;
+		}
 	}
 	return 1; // stay on
 }
@@ -162,6 +179,12 @@ int main(void)
 
   buttons_init();
   buttons_enable_irq();
+
+  leds_init();
+  leds_front_dsiplay(0xAB);
+  i2cLED_PowerUp();
+
+  leds_front_display_time(12, 39, 1, 0x37, test_pwm);
 
   scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
   scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
@@ -642,13 +665,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SPI1_NSS_Pin|SPI1_NSS1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI1_NSS2_GPIO_Port, SPI1_NSS2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : USR_BTN_Pin IS_SDB_Pin IS_INTB_Pin RTC_INT_Pin */
   GPIO_InitStruct.Pin = USR_BTN_Pin|IS_SDB_Pin|IS_INTB_Pin|RTC_INT_Pin;

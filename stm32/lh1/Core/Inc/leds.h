@@ -1,12 +1,13 @@
 /**
  * Martin Egli
  * 2024-11-13
- * buttons for light house
+ * leds for light house
  */
 
-#ifndef _MM_BUTTONS_H_
-#define _MM_BUTTONS_H_
- 
+
+#ifndef INC_LEDS_H_
+#define INC_LEDS_H_
+
 // - includes ------------------------------------------------------------------
 #include <stdint.h>
 
@@ -14,12 +15,11 @@
 
 // - public functions ----------------------------------------------------------
 
-/**
- * nothing to do here, see void MX_GPIO_Init(void) in main.c
- */
-void buttons_init(void);
+void leds_init(void);
+void leds_front_dsiplay(char c);
 
-void buttons_enable_irq(void);
-void buttons_disable_irq(void);
+void i2cLED_PowerUp(void);
+void i2cLED_PowerDown(void);
+void leds_front_display_time(uint8_t hour, uint8_t min, uint8_t colon, uint8_t days_mask, uint8_t pwm);
 
-#endif // _MM_BUTTONS_H_
+#endif /* INC_LEDS_H_ */
