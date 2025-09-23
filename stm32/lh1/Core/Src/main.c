@@ -95,35 +95,37 @@ static volatile uint8_t test_pwm = 10;
 
 static int8_t main_task_func(uint8_t event, void *data) {
 	if(event == MAIN_EV_BUTTON0) {
+		HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 		main_cnt++;
 	}
 	if(event == MAIN_EV_BUTTON1) {
+		HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 		main_cnt++;
 	}
 	if(event == MAIN_EV_BUTTON2) {
+		HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 		main_cnt++;
 	}
 	if(event == MAIN_EV_BUTTON3) {
+		HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 		main_cnt++;
 	}
 	if(event == MAIN_EV_BUTTON4) {
+		HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 		main_cnt++;
 	}
 
-	if(event == MAIN_EV_USR_BUTTON) {
-		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
-
-		leds_front_display_time(time_cnt, time_cnt, (disp_colon & 0x01), day_mask, test_pwm);
-		disp_colon++;
-		time_cnt += 11;
-		if(time_cnt > 99) {
-			time_cnt = 0;
-		}
-		day_mask <<= 1;
-		if(day_mask > 0x7F) {
-			day_mask = 0x01;
-		}
+	leds_front_display_time(time_cnt, time_cnt, (disp_colon & 0x01), day_mask, test_pwm);
+	disp_colon++;
+	time_cnt += 11;
+	if(time_cnt > 99) {
+		time_cnt = 0;
 	}
+	day_mask <<= 1;
+	if(day_mask > 0x7F) {
+		day_mask = 0x01;
+	}
+
 	return 1; // stay on
 }
 
@@ -171,7 +173,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   scheduler_init();
-  power_mode_request(POWER_MODE_NONE);
+  //power_mode_request(POWER_MODE_RUN);
+  //power_mode_request(POWER_MODE_SLEEP);
+
+  HAL_SuspendTick();
 
   scheduler_add_task(&main_task);
   main_tid = main_task.tid;
@@ -184,6 +189,7 @@ int main(void)
   leds_front_dsiplay(0xAB);
   i2cLED_PowerUp();
 
+  //leds_front_test_pattern();
   leds_front_display_time(12, 39, 1, 0x37, test_pwm);
 
   scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
@@ -415,6 +421,10 @@ static void MX_RTC_Init(void)
 
   /* USER CODE END RTC_Init 0 */
 
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
+
   /* USER CODE BEGIN RTC_Init 1 */
 
   /* USER CODE END RTC_Init 1 */
@@ -434,8 +444,51 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN RTC_Init 2 */
 
+  /* USER CODE BEGIN Check_RTC_BKUP */
+
+  /* USER CODE END Check_RTC_BKUP */
+
+  /** Initialize RTC and set the Time and Date
+  */
+  sTime.Hours = 0x0;
+  sTime.Minutes = 0x0;
+  sTime.Seconds = 0x0;
+  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
+  sDate.Month = RTC_MONTH_JANUARY;
+  sDate.Date = 0x1;
+  sDate.Year = 0x0;
+
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Enable the Alarm A
+  */
+  sAlarm.AlarmTime.Hours = 0x0;
+  sAlarm.AlarmTime.Minutes = 0x0;
+  sAlarm.AlarmTime.Seconds = 0x1;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
+  HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
   /* USER CODE END RTC_Init 2 */
 
 }
@@ -656,8 +709,8 @@ static void MX_USART3_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -670,11 +723,8 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : USR_BTN_Pin IS_SDB_Pin IS_INTB_Pin RTC_INT_Pin */
-  GPIO_InitStruct.Pin = USR_BTN_Pin|IS_SDB_Pin|IS_INTB_Pin|RTC_INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : SPI1_NSS_Pin SPI1_NSS1_Pin SPI1_NSS2_Pin */
   GPIO_InitStruct.Pin = SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin;
@@ -698,6 +748,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(USR_LED_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : IS_SDB_Pin */
+  GPIO_InitStruct.Pin = IS_SDB_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(IS_SDB_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : IS_INTB_Pin RTC_INT_Pin */
+  GPIO_InitStruct.Pin = IS_INTB_Pin|RTC_INT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
@@ -714,11 +777,8 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -739,8 +799,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

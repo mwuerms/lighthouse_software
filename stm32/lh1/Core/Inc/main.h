@@ -68,9 +68,6 @@ extern int8_t main_tid; // task ID
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define USR_BTN_Pin GPIO_PIN_13
-#define USR_BTN_GPIO_Port GPIOC
-#define USR_BTN_EXTI_IRQn EXTI15_10_IRQn
 #define RTC_CLK_Pin GPIO_PIN_0
 #define RTC_CLK_GPIO_Port GPIOC
 #define VBAT_Pin GPIO_PIN_2

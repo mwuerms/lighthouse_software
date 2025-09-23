@@ -56,6 +56,7 @@ static void i2c_Send(uint8_t reg_addr, uint8_t *buffer, uint32_t size) {
  * send configuration for normal operation mode
  */
 void i2cLED_PowerUp(void) {
+	HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_SET);
 	// 0x0A, shutdown register = 1: normal operation
 	uint8_t tx_buf[] = {cFUNC_SHUTDOWN_REG, 1};
 	i2c_Send(cFUNC_REG_ADDR, tx_buf, sizeof(tx_buf));
@@ -65,6 +66,7 @@ void i2cLED_PowerUp(void) {
  * send configuration for shutdown mode
  */
 void i2cLED_PowerDown(void) {
+	HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_RESET);
 	// 0x0A, shutdown register = 0: shutdown mode
 	uint8_t tx_buf[] = {cFUNC_SHUTDOWN_REG, 0};
 	i2c_Send(cFUNC_REG_ADDR, tx_buf, sizeof(tx_buf));
@@ -230,9 +232,3 @@ void leds_front_display_time(uint8_t hour, uint8_t min, uint8_t colon, uint8_t d
 
 	i2c_Send(cFRAME_1_REG_ADDR, (uint8_t *)&i2c_led_frame_buffer, I2C_LED_FRAME_SIZE);
 }
-
-
-
-
-
-

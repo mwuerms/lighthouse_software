@@ -213,7 +213,7 @@ int8_t scheduler_stop_event_timer(void) {
 int8_t scheduler_add_timer_event(uint16_t timeout, uint8_t tid, uint8_t event, void *data) {
 	event_t ev;
 	int8_t ret;
-	uint8_t sr;
+	uint32_t sr;
 
 	ev.tid = tid;
 	ev.event = event;

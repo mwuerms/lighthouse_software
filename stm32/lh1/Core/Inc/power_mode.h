@@ -17,10 +17,11 @@
 
 //- defines --------------------------------------------------------------------
 // define power modes accordning to mcu
+// see https://wiki.stmicroelectronics.cn/stm32mcu/wiki/Getting_started_with_PWR
 #define NB_OF_POWER_MODES (3)
-#define POWER_MODE_NONE (0)
-#define POWER_MODE_1 (1)
-#define POWER_MODE_2 (2)
+#define POWER_MODE_RUN (0)
+#define POWER_MODE_SLEEP (1)
+#define POWER_MODE_STOP (2)
 
 // - public functions ----------------------------------------------------------
 
