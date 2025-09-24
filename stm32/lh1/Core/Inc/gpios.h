@@ -1,11 +1,11 @@
 /**
  * Martin Egli
  * 2024-11-13
- * buttons for light house
+ * gpios for light house
  */
 
-#ifndef _MM_BUTTONS_H_
-#define _MM_BUTTONS_H_
+#ifndef _MM_GPIOS_H_
+#define _MM_GPIOS_H_
  
 // - includes ------------------------------------------------------------------
 #include <stdint.h>
@@ -17,9 +17,11 @@
 /**
  * nothing to do here, see void MX_GPIO_Init(void) in main.c
  */
-void buttons_init(void);
+void gpios_init(void);
 
-void buttons_enable_irq(void);
-void buttons_disable_irq(void);
+void gpios_button_enable_irq(void);
+void gpios_button_disable_irq(void);
+void gpios_vbus_enable_irq(void);
+void gpios_vbus_disable_irq(void);
 
-#endif // _MM_BUTTONS_H_
+#endif // _MM_GPIOS_H_

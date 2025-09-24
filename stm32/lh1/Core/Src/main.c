@@ -23,8 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "scheduler.h"
-#include "buttons.h"
 #include "leds.h"
+#include "gpios.h"
 
 /* USER CODE END Includes */
 
@@ -87,11 +87,16 @@ static void MX_ADC1_Init(void);
 static int8_t main_task_func(uint8_t event, void *data);
 static task_t main_task = {.name = "MAIN", .task = main_task_func};
 int8_t main_tid;
+
+static int8_t vbus_task_func(uint8_t event, void *data);
+static task_t vbus_task = {.name = "VBUS/USB", .task = vbus_task_func};
+int8_t vbus_tid;
+
 static volatile uint16_t main_cnt = 0;
 static uint8_t time_cnt = 0;
 static uint8_t day_mask = 0x01;
 static uint8_t disp_colon = 1;
-static volatile uint8_t test_pwm = 10;
+static volatile uint8_t test_pwm = 100;
 
 static int8_t main_task_func(uint8_t event, void *data) {
 	if(event == MAIN_EV_BUTTON0) {
@@ -126,6 +131,19 @@ static int8_t main_task_func(uint8_t event, void *data) {
 		day_mask = 0x01;
 	}
 
+	return 1; // stay on
+}
+
+static int8_t vbus_task_func(uint8_t event, void *data) {
+	if(event == VBUS_EV_PLUGGED_IN) {
+		// activate USB
+		MX_USB_DEVICE_Init();
+		power_mode_request(POWER_MODE_RUN);
+	}
+	if(event == VBUS_EV_PULLED_OUT) {
+		// deactivate USB
+		power_mode_release(POWER_MODE_RUN);
+	}
 	return 1; // stay on
 }
 
@@ -173,7 +191,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   scheduler_init();
-  //power_mode_request(POWER_MODE_RUN);
+  power_mode_request(POWER_MODE_RUN);
   //power_mode_request(POWER_MODE_SLEEP);
 
   HAL_SuspendTick();
@@ -182,8 +200,13 @@ int main(void)
   main_tid = main_task.tid;
   scheduler_start_task(main_tid);
 
-  buttons_init();
-  buttons_enable_irq();
+  scheduler_add_task(&vbus_task);
+  vbus_tid = vbus_task.tid;
+  scheduler_start_task(vbus_tid);
+
+  gpios_init();
+  gpios_button_enable_irq();
+  gpios_vbus_enable_irq();
 
   leds_init();
   leds_front_dsiplay(0xAB);
@@ -721,9 +744,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(USR_LED_GPIO_Port, USR_LED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : VBUS_SENSE_Pin */
@@ -746,13 +766,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : USR_LED_Pin */
-  GPIO_InitStruct.Pin = USR_LED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(USR_LED_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : IS_SDB_Pin */
   GPIO_InitStruct.Pin = IS_SDB_Pin;
@@ -782,6 +795,9 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
   /* USER CODE END MX_GPIO_Init_2 */

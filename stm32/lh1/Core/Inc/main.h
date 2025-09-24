@@ -65,11 +65,16 @@ extern int8_t main_tid; // task ID
 #define MAIN_EV_BUTTON4 (5)
 #define MAIN_EV_USR_BUTTON (6)
 
+extern int8_t vbus_tid; // task ID
+#define VBUS_EV_PLUGGED_IN (1)
+#define VBUS_EV_PULLED_OUT (2)
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
 #define VBUS_SENSE_Pin GPIO_PIN_13
 #define VBUS_SENSE_GPIO_Port GPIOC
+#define VBUS_SENSE_EXTI_IRQn EXTI15_10_IRQn
 #define RTC_CLK_Pin GPIO_PIN_0
 #define RTC_CLK_GPIO_Port GPIOC
 #define VBAT_Pin GPIO_PIN_2
@@ -97,8 +102,6 @@ extern int8_t main_tid; // task ID
 #define BTN2_Pin GPIO_PIN_2
 #define BTN2_GPIO_Port GPIOB
 #define BTN2_EXTI_IRQn EXTI2_IRQn
-#define USR_LED_Pin GPIO_PIN_13
-#define USR_LED_GPIO_Port GPIOB
 #define IS_SDB_Pin GPIO_PIN_6
 #define IS_SDB_GPIO_Port GPIOC
 #define IS_INTB_Pin GPIO_PIN_7
