@@ -52,10 +52,17 @@ static void i2c_Send(uint8_t reg_addr, uint8_t *buffer, uint32_t size) {
 	HAL_I2C_Master_Transmit(&hi2c1, cI2C_ADDR_WR, buffer, size, HAL_MAX_DELAY);
 }
 
+// - public functions ----------------------------------------------------------
+uint8_t leds_front_display_weekday_mask[8] = {0x00, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+
+void leds_init(void) {
+	return;
+}
+
 /**
  * send configuration for normal operation mode
  */
-void i2cLED_PowerUp(void) {
+void leds_front_dsiplay_power_up(void) {
 	HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_SET);
 	// 0x0A, shutdown register = 1: normal operation
 	uint8_t tx_buf[] = {cFUNC_SHUTDOWN_REG, 1};
@@ -65,21 +72,22 @@ void i2cLED_PowerUp(void) {
 /**
  * send configuration for shutdown mode
  */
-void i2cLED_PowerDown(void) {
+void leds_front_dsiplay_power_down(void) {
 	HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_RESET);
 	// 0x0A, shutdown register = 0: shutdown mode
 	uint8_t tx_buf[] = {cFUNC_SHUTDOWN_REG, 0};
 	i2c_Send(cFUNC_REG_ADDR, tx_buf, sizeof(tx_buf));
 }
 
-// - public functions ----------------------------------------------------------
-void leds_init(void) {
-	return;
-}
 
 void leds_front_dsiplay(char c) {
 	uint8_t tx_buf[] = {0xFD, c};
 	HAL_I2C_Master_Transmit(&hi2c1, cI2C_ADDR_WR, tx_buf, sizeof(tx_buf), HAL_MAX_DELAY);
+}
+
+static uint8_t front_pwm;
+void leds_front_dsiplay_set_brightness(uint8_t pwm) {
+	front_pwm = pwm;
 }
 
 
@@ -102,7 +110,7 @@ static struct {
 	uint8_t pwm_reg[I2C_LED_FRAME_PWM_REG_SIZE];  // 144
 } __attribute__((packed)) i2c_led_frame_buffer;
 
-static uint8_t led_ctrl_is_used_maks[I2C_LED_FRAME_LED_CTRL_SIZE] = {
+static uint8_t led_ctrl_is_used_mask[I2C_LED_FRAME_LED_CTRL_SIZE] = {
 		// 0,    1,    2,    3,    4,    5,    6,    7,    8,    9,   10,   11,   12,   13,   14,   15,   16,   17
 		0xFF, 0xFF, 0x1F, 0x1F, 0xFF, 0xFF, 0x1F, 0x1F, 0x0F, 0x7F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
@@ -176,17 +184,17 @@ static const uint8_t char_num_pos[10][13] = {
 static const uint8_t char_colon_len = 2;
 static const uint8_t char_colon_pos[] = {1, 3};
 
-void leds_front_display_time(uint8_t hour, uint8_t min, uint8_t colon, uint8_t days_mask, uint8_t pwm) {
+void leds_front_display_update_time(uint8_t hour, uint8_t min, uint8_t colon, uint8_t days_mask) {
 	uint8_t n, c, pos;
 	i2c_led_frame_buffer.reg_addr = 0;
 	for(n = 0; n < I2C_LED_FRAME_LED_CTRL_SIZE; n++) {
-		i2c_led_frame_buffer.led_ctrl[n] = led_ctrl_is_used_maks[n];
+		i2c_led_frame_buffer.led_ctrl[n] = led_ctrl_is_used_mask[n];
 	}
 	for(n = 0; n < I2C_LED_FRAME_BLINK_CTRL_SIZE; n++) {
 		i2c_led_frame_buffer.blink_ctrl[n] = 0x00;
 	}
 	for(n = 0; n < I2C_LED_FRAME_PWM_REG_SIZE; n++) {
-		i2c_led_frame_buffer.pwm_reg[n] = 0;//pwm;
+		i2c_led_frame_buffer.pwm_reg[n] = 0;//front_pwm;
 	}
 
 	// pwm_reg_pos_num_0
@@ -194,19 +202,28 @@ void leds_front_display_time(uint8_t hour, uint8_t min, uint8_t colon, uint8_t d
 	hour -= c*10;
 	for(n = 0; n < char_num_len[c]; n++) {
 		pos = pwm_reg_pos_num_0[char_num_pos[c][n]];
-		i2c_led_frame_buffer.pwm_reg[pos] = pwm;
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 	}
 	// pwm_reg_pos_num_1
 	c = hour;
 	for(n = 0; n < char_num_len[c]; n++) {
 		pos = pwm_reg_pos_num_1[char_num_pos[c][n]];
-		i2c_led_frame_buffer.pwm_reg[pos] = pwm;
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 	}
 	// pwm_reg_pos_colon
-	if(colon) {
+	/*if(colon) {
 		for(n = 0; n < char_colon_len; n++) {
 			pos = pwm_reg_pos_colon[char_colon_pos[n]];
-			i2c_led_frame_buffer.pwm_reg[pos] = pwm;
+			i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
+		}
+	}*/
+	for(n = 0; n < char_colon_len; n++) {
+		pos = pwm_reg_pos_colon[char_colon_pos[n]];
+		if(colon) {
+			i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
+		}
+		else {
+			i2c_led_frame_buffer.pwm_reg[pos] = 0;
 		}
 	}
 	// pwm_reg_pos_num_2
@@ -214,20 +231,58 @@ void leds_front_display_time(uint8_t hour, uint8_t min, uint8_t colon, uint8_t d
 	min -= c*10;
 	for(n = 0; n < char_num_len[c]; n++) {
 		pos = pwm_reg_pos_num_2[char_num_pos[c][n]];
-		i2c_led_frame_buffer.pwm_reg[pos] = pwm;
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 	}
 	// pwm_reg_pos_num_3
 	c = min;
 	for(n = 0; n < char_num_len[c]; n++) {
 		pos = pwm_reg_pos_num_3[char_num_pos[c][n]];
-		i2c_led_frame_buffer.pwm_reg[pos] = pwm;
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 	}
 	// pwm_reg_pos_days
 	for(n = 0, c = 0x01; n < 7; n++, c <<= 1) {
 		if(days_mask & c) {
 			pos = pwm_reg_pos_days[n];
+			i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
+		}
+	}
+	i2c_Send(cFRAME_1_REG_ADDR, (uint8_t *)&i2c_led_frame_buffer, I2C_LED_FRAME_SIZE);
+}
+
+// always write a whole frame
+// other idea: set 2 frames and switch between both frames, less i2c trafic every 1 s
+void leds_front_display_update_colon(uint8_t colon) {
+	uint8_t pos;
+	i2c_led_frame_buffer.reg_addr = 0;
+	// pwm_reg_pos_colon
+	/*for(n = 0; n < char_colon_len; n++) {
+		pos = pwm_reg_pos_colon[char_colon_pos[n]];
+		if(colon) {
 			i2c_led_frame_buffer.pwm_reg[pos] = pwm;
 		}
+		else {
+			i2c_led_frame_buffer.pwm_reg[pos] = 0;
+		}
+	}*/
+	if(colon) {
+		pos = pwm_reg_pos_colon[0];
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
+		pos = pwm_reg_pos_colon[1];
+		i2c_led_frame_buffer.pwm_reg[pos] = 0;
+		pos = pwm_reg_pos_colon[2];
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
+		pos = pwm_reg_pos_colon[3];
+		i2c_led_frame_buffer.pwm_reg[pos] = 0;
+	}
+	else {
+		pos = pwm_reg_pos_colon[0];
+		i2c_led_frame_buffer.pwm_reg[pos] = 0;
+		pos = pwm_reg_pos_colon[1];
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
+		pos = pwm_reg_pos_colon[2];
+		i2c_led_frame_buffer.pwm_reg[pos] = 0;
+		pos = pwm_reg_pos_colon[3];
+		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 	}
 
 	i2c_Send(cFRAME_1_REG_ADDR, (uint8_t *)&i2c_led_frame_buffer, I2C_LED_FRAME_SIZE);

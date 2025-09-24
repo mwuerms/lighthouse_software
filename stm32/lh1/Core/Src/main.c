@@ -25,6 +25,7 @@
 #include "scheduler.h"
 #include "leds.h"
 #include "gpios.h"
+#include "rtc.h"
 
 /* USER CODE END Includes */
 
@@ -120,7 +121,7 @@ static int8_t main_task_func(uint8_t event, void *data) {
 		main_cnt++;
 	}
 
-	leds_front_display_time(time_cnt, time_cnt, (disp_colon & 0x01), day_mask, test_pwm);
+	leds_front_display_update_time(time_cnt, time_cnt, (disp_colon & 0x01), day_mask);
 	disp_colon++;
 	time_cnt += 11;
 	if(time_cnt > 99) {
@@ -194,6 +195,10 @@ int main(void)
   power_mode_request(POWER_MODE_RUN);
   //power_mode_request(POWER_MODE_SLEEP);
 
+  rtc_init();
+  rtc_set_date_time(25, RTC_MONTH_SEPTEMBER, 24, 17, 58, 17, RTC_WEEKDAY_WEDNESDAY);
+  rtc_enable_1s_irq();
+
   HAL_SuspendTick();
 
   scheduler_add_task(&main_task);
@@ -210,10 +215,11 @@ int main(void)
 
   leds_init();
   leds_front_dsiplay(0xAB);
-  i2cLED_PowerUp();
+  leds_front_dsiplay_power_up();
 
   //leds_front_test_pattern();
-  leds_front_display_time(12, 39, 1, 0x37, test_pwm);
+  leds_front_dsiplay_set_brightness(test_pwm);
+  leds_front_display_update_time(12, 39, 1, 0x37);
 
   scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
   scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
@@ -457,7 +463,7 @@ static void MX_RTC_Init(void)
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
+  hrtc.Init.SynchPrediv = 249;
   hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
   hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
   hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
@@ -474,39 +480,55 @@ static void MX_RTC_Init(void)
 
   /** Initialize RTC and set the Time and Date
   */
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
+  sTime.Hours = 0;
+  sTime.Minutes = 0;
+  sTime.Seconds = 0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
+  sDate.WeekDay = RTC_WEEKDAY_WEDNESDAY;
+  sDate.Month = RTC_MONTH_SEPTEMBER;
+  sDate.Date = 24;
+  sDate.Year = 25;
 
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Enable the Alarm A
   */
-  sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x0;
-  sAlarm.AlarmTime.Seconds = 0x1;
-  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmTime.Hours = 0;
+  sAlarm.AlarmTime.Minutes = 0;
+  sAlarm.AlarmTime.Seconds = 1;
+  sAlarm.AlarmTime.SubSeconds = 0;
   sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
   sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.AlarmDateWeekDay = 1;
   sAlarm.Alarm = RTC_ALARM_A;
-  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Enable the Alarm B
+  */
+  sAlarm.AlarmTime.Seconds = 0;
+  sAlarm.Alarm = RTC_ALARM_B;
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Enable the WakeUp
+  */
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16, 0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -746,12 +768,6 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : VBUS_SENSE_Pin */
-  GPIO_InitStruct.Pin = VBUS_SENSE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(VBUS_SENSE_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : SPI1_NSS_Pin SPI1_NSS1_Pin SPI1_NSS2_Pin */
   GPIO_InitStruct.Pin = SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -774,8 +790,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(IS_SDB_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : IS_INTB_Pin RTC_INT_Pin */
-  GPIO_InitStruct.Pin = IS_INTB_Pin|RTC_INT_Pin;
+  /*Configure GPIO pins : IS_INTB_Pin RTC_INT_Pin VBUS_SENSE_Pin V5_SENSE_Pin */
+  GPIO_InitStruct.Pin = IS_INTB_Pin|RTC_INT_Pin|VBUS_SENSE_Pin|V5_SENSE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);

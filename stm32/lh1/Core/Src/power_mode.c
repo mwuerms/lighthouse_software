@@ -84,7 +84,7 @@ void power_mode_sleep(void) {
 				// stay here in stop mode
 				HAL_SuspendTick();
 				HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
-				HAL_ResumeTick();
+				//HAL_ResumeTick();
 				SystemClock_Config();
 			}
 			break;

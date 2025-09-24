@@ -37,6 +37,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 extern I2C_HandleTypeDef hi2c1;
+extern RTC_HandleTypeDef hrtc;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -72,9 +73,6 @@ extern int8_t vbus_tid; // task ID
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define VBUS_SENSE_Pin GPIO_PIN_13
-#define VBUS_SENSE_GPIO_Port GPIOC
-#define VBUS_SENSE_EXTI_IRQn EXTI15_10_IRQn
 #define RTC_CLK_Pin GPIO_PIN_0
 #define RTC_CLK_GPIO_Port GPIOC
 #define VBAT_Pin GPIO_PIN_2
@@ -112,6 +110,12 @@ extern int8_t vbus_tid; // task ID
 #define SPI1_NSS1_GPIO_Port GPIOA
 #define SPI1_NSS2_Pin GPIO_PIN_15
 #define SPI1_NSS2_GPIO_Port GPIOA
+#define VBUS_SENSE_Pin GPIO_PIN_10
+#define VBUS_SENSE_GPIO_Port GPIOC
+#define VBUS_SENSE_EXTI_IRQn EXTI15_10_IRQn
+#define V5_SENSE_Pin GPIO_PIN_11
+#define V5_SENSE_GPIO_Port GPIOC
+#define V5_SENSE_EXTI_IRQn EXTI15_10_IRQn
 #define BTN3_Pin GPIO_PIN_3
 #define BTN3_GPIO_Port GPIOB
 #define BTN3_EXTI_IRQn EXTI3_IRQn
