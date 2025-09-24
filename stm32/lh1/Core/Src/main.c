@@ -85,10 +85,6 @@ static void MX_ADC1_Init(void);
 /* USER CODE BEGIN 0 */
 
 // - main task -----------------------------------------------------------------
-static int8_t main_task_func(uint8_t event, void *data);
-static task_t main_task = {.name = "MAIN", .task = main_task_func};
-int8_t main_tid;
-
 static int8_t vbus_task_func(uint8_t event, void *data);
 static task_t vbus_task = {.name = "VBUS/USB", .task = vbus_task_func};
 int8_t vbus_tid;
@@ -98,42 +94,6 @@ static uint8_t time_cnt = 0;
 static uint8_t day_mask = 0x01;
 static uint8_t disp_colon = 1;
 static volatile uint8_t test_pwm = 100;
-
-static int8_t main_task_func(uint8_t event, void *data) {
-	if(event == MAIN_EV_BUTTON0) {
-		HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-		main_cnt++;
-	}
-	if(event == MAIN_EV_BUTTON1) {
-		HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-		main_cnt++;
-	}
-	if(event == MAIN_EV_BUTTON2) {
-		HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-		main_cnt++;
-	}
-	if(event == MAIN_EV_BUTTON3) {
-		HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-		main_cnt++;
-	}
-	if(event == MAIN_EV_BUTTON4) {
-		HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-		main_cnt++;
-	}
-
-	leds_front_display_update_time(time_cnt, time_cnt, (disp_colon & 0x01), day_mask);
-	disp_colon++;
-	time_cnt += 11;
-	if(time_cnt > 99) {
-		time_cnt = 0;
-	}
-	day_mask <<= 1;
-	if(day_mask > 0x7F) {
-		day_mask = 0x01;
-	}
-
-	return 1; // stay on
-}
 
 static int8_t vbus_task_func(uint8_t event, void *data) {
 	if(event == VBUS_EV_PLUGGED_IN) {
@@ -195,15 +155,7 @@ int main(void)
   power_mode_request(POWER_MODE_RUN);
   //power_mode_request(POWER_MODE_SLEEP);
 
-  rtc_init();
-  rtc_set_date_time(25, RTC_MONTH_SEPTEMBER, 24, 17, 58, 17, RTC_WEEKDAY_WEDNESDAY);
-  rtc_enable_1s_irq();
-
   HAL_SuspendTick();
-
-  scheduler_add_task(&main_task);
-  main_tid = main_task.tid;
-  scheduler_start_task(main_tid);
 
   scheduler_add_task(&vbus_task);
   vbus_tid = vbus_task.tid;
@@ -221,8 +173,11 @@ int main(void)
   leds_front_dsiplay_set_brightness(test_pwm);
   leds_front_display_update_time(12, 39, 1, 0x37);
 
-  scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
-  scheduler_send_event(main_tid, MAIN_EV_USR_BUTTON, NULL);
+  rtc_init();
+  rtc_set_date_time(25, RTC_MONTH_SEPTEMBER, 24, 17, 58, 45, RTC_WEEKDAY_WEDNESDAY);
+  rtc_enable_1s_irq();
+
+  ui_init();
 
   // stay in scheduler
   scheduler_run();

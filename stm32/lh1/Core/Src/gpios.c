@@ -5,9 +5,10 @@
  */
 
 // - includes ------------------------------------------------------------------
-#include <gpios.h>
 #include "main.h"
 #include "scheduler.h"
+#include "ui.h"
+#include "gpios.h"
 
 // - private functions ---------------------------------------------------------
 /*Configure GPIO pins : BTN0_Pin BTN1_Pin BTN2_Pin BTN3_Pin
@@ -23,23 +24,23 @@ HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if(GPIO_Pin == BTN0_Pin) {
 		HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-		scheduler_send_event(main_tid, MAIN_EV_BUTTON0, NULL);
+		scheduler_send_event(ui_tid, UI_EV_BUTTON0, NULL);
 	}
 	if(GPIO_Pin == BTN1_Pin) {
 		HAL_NVIC_DisableIRQ(EXTI1_IRQn);
-		scheduler_send_event(main_tid, MAIN_EV_BUTTON1, NULL);
+		scheduler_send_event(ui_tid, UI_EV_BUTTON1, NULL);
 	}
 	if(GPIO_Pin == BTN2_Pin) {
 		HAL_NVIC_DisableIRQ(EXTI2_IRQn);
-		scheduler_send_event(main_tid, MAIN_EV_BUTTON2, NULL);
+		scheduler_send_event(ui_tid, UI_EV_BUTTON2, NULL);
 	}
 	if(GPIO_Pin == BTN3_Pin) {
 		HAL_NVIC_DisableIRQ(EXTI3_IRQn);
-		scheduler_send_event(main_tid, MAIN_EV_BUTTON3, NULL);
+		scheduler_send_event(ui_tid, UI_EV_BUTTON3, NULL);
 	}
 	if(GPIO_Pin == BTN4_Pin) {
 		HAL_NVIC_DisableIRQ(EXTI4_IRQn);
-		scheduler_send_event(main_tid, MAIN_EV_BUTTON4, NULL);
+		scheduler_send_event(ui_tid, UI_EV_BUTTON4, NULL);
 	}
 
 	if(GPIO_Pin == VBUS_SENSE_Pin) {

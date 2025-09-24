@@ -58,14 +58,6 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 
 // - main task -----------------------------------------------------------------
-extern int8_t main_tid; // task ID
-#define MAIN_EV_BUTTON0 (1)
-#define MAIN_EV_BUTTON1 (2)
-#define MAIN_EV_BUTTON2 (3)
-#define MAIN_EV_BUTTON3 (4)
-#define MAIN_EV_BUTTON4 (5)
-#define MAIN_EV_USR_BUTTON (6)
-
 extern int8_t vbus_tid; // task ID
 #define VBUS_EV_PLUGGED_IN (1)
 #define VBUS_EV_PULLED_OUT (2)

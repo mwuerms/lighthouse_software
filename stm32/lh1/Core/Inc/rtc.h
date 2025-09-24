@@ -25,6 +25,12 @@ void rtc_init(void);
  */
 void rtc_set_date_time(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec, uint8_t weekday);
 void rtc_get_date_time(uint8_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *min, uint8_t *sec, uint8_t *weekday);
+
+// update_present_date_time is called internally, every 1s
+uint8_t rtc_get_present_hours(void);
+uint8_t rtc_get_present_minutes(void);
+uint8_t rtc_get_present_seconds(void);
+uint8_t rtc_get_present_weekday(void);
 void rtc_enable_1s_irq(void);
 
 #endif /* INC_RTC_H_ */
