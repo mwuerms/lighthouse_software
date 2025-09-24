@@ -56,6 +56,16 @@ static int8_t rtc_task_func(uint8_t event, void *data) {
 }
 
 // - public functions -----------------------------------
+const char rtc_weekday_names[][4] = {
+	"---",
+	"Mon",
+	"Tue",
+	"Wen",
+	"Thu",
+	"Fri",
+	"Sat",
+	"Sun",
+};
 
 void rtc_init(void) {
 	HAL_NVIC_SetPriority(RTC_WKUP_IRQn, 0, 0);
@@ -72,6 +82,20 @@ void rtc_set_date_time(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, u
 	HAL_RTC_SetTime(&hrtc, &set_time, RTC_FORMAT_BIN);
 	HAL_RTC_SetDate(&hrtc, &set_date, RTC_FORMAT_BIN);
 	scheduler_send_event(rtc_tid, RTC_EV_UPDATE_TIME, NULL);
+}
+
+void rtc_get_date_time(uint8_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *min, uint8_t *sec, uint8_t *weekday) {
+	RTC_DateTypeDef get_date;
+	RTC_TimeTypeDef get_time;
+	HAL_RTC_GetTime(&hrtc, &get_time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &get_date, RTC_FORMAT_BIN);
+	*year = get_date.Year;
+	*month = get_date.Month;
+	*day = get_date.Date;
+	*weekday = get_date.WeekDay;
+	*hour = get_time.Hours;
+	*min = get_time.Minutes;
+	*sec = get_time.Seconds;
 }
 
 void rtc_enable_1s_irq(void) {

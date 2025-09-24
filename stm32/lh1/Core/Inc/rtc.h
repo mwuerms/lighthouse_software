@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+extern const char rtc_weekday_names[][4];
 void rtc_init(void);
 
 /**
@@ -23,6 +24,7 @@ void rtc_init(void);
  * @param weekday 1 ... 7, use RTC_WEEKDAY_MONDAY, ...
  */
 void rtc_set_date_time(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec, uint8_t weekday);
+void rtc_get_date_time(uint8_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *min, uint8_t *sec, uint8_t *weekday);
 void rtc_enable_1s_irq(void);
 
 #endif /* INC_RTC_H_ */

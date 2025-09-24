@@ -235,6 +235,13 @@ uint16_t str_buf_append_uint8(char *str, uint16_t str_size, uint8_t num) {
     return str_buf_append_uint32_nb_digits(str, str_size, (uint32_t)num, 3);
 }
 
+uint16_t str_buf_append_uint8_lead0(char *str, uint16_t str_size, uint8_t num) {
+	if(num < 10) {
+		str_buf_append_uint8(str, str_size, 0);
+	}
+    return str_buf_append_uint32_nb_digits(str, str_size, (uint32_t)num, 3);
+}
+
 uint16_t str_buf_append_int8(char *str, uint16_t str_size, int8_t num) {
     return str_buf_append_int32_nb_digits(str, str_size, (int32_t)num, 3);
 }

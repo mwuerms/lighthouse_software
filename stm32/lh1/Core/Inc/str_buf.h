@@ -107,6 +107,11 @@ uint16_t str_buf_delete_from_tail(char *str, uint16_t str_size, uint16_t nb_char
 uint16_t str_buf_append_uint8(char *str, uint16_t str_size, uint8_t num);
 
 /**
+ * append a number in uint8_t with a leading 0
+ */
+uint16_t str_buf_append_uint8_lead0(char *str, uint16_t str_size, uint8_t num);
+
+/**
  * append a number in int8_t as chars with sign (-='-', +=' ') to the destination string
  * @param   str         destination string to append to, this string will be changed
  * @param   str_size    size of the destination string
