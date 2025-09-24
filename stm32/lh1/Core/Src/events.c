@@ -112,14 +112,14 @@ static inline void get_compare_from_timer_event_fifo(void) {
 }
 
 static int8_t ev_timer_hal_task(uint8_t event, void *data) {
-	uint16_t n, sr;
+	uint16_t n;
     ev_timer_CNT++;
-	printf("ev_timer_hal_task(ev: %d)\n", event);
-	printf("  CNT:     %d\n", ev_timer_CNT);
-	printf("  COMPARE: %d\n", ev_timer_COMPARE);
+    DEBUG_PRINTF_MESSAGE("ev_timer_hal_task(ev: %d)\n", event);
+    DEBUG_PRINTF_MESSAGE("  CNT:     %d\n", ev_timer_CNT);
+    DEBUG_PRINTF_MESSAGE("  COMPARE: %d\n", ev_timer_COMPARE);
 	if(ev_timer_CNT == ev_timer_COMPARE) {
 		lock_interrupt(sr);
-		printf("  COMPARE == CNT\n");
+		DEBUG_PRINTF_MESSAGE("  COMPARE == CNT\n");
 
 		for(n = events_timer_fifo.size; n != 0; n --) {
 			// get the first timer event
@@ -128,7 +128,7 @@ static int8_t ev_timer_hal_task(uint8_t event, void *data) {
 					// this timer event is active, does it macht?
 					if(events_timer_fifo_data[events_timer_fifo.rd_proc].compare == ev_timer_CNT) {
 						// match: send the timer event and set this timer event inactive
-						printf("  match at CNT: %d\n", ev_timer_CNT);
+						DEBUG_PRINTF_MESSAGE("  match at CNT: %d\n", ev_timer_CNT);
 						scheduler_send_event(events_timer_fifo_data[events_timer_fifo.rd_proc].event.tid,
 							events_timer_fifo_data[events_timer_fifo.rd_proc].event.event,
 							events_timer_fifo_data[events_timer_fifo.rd_proc].event.data);
@@ -146,15 +146,14 @@ static int8_t ev_timer_hal_task(uint8_t event, void *data) {
 				}
 			}
 		}
+		restore_interrupt(sr);
 	}
 
-	restore_interrupt(sr);
     return(1);
 }
 
 static uint32_t ev_timer_get_current_time(void) {
     uint32_t time;
-    uint16_t sr;
     
     lock_interrupt(sr);
     time = ev_timer_CNT;
@@ -217,7 +216,6 @@ void events_init(void) {
 }
 
 uint8_t events_add_to_main_fifo(event_t *ev) {
-	uint16_t sr;
 	DEBUG_PRINTF_MESSAGE("events_main_fifo_write: (wr: %d, rd:%d, size: %d)",
 				events_main_fifo.wr,
 				events_main_fifo.rd,
@@ -248,7 +246,6 @@ uint8_t events_add_to_main_fifo(event_t *ev) {
 }
 
 uint8_t events_get_from_main_fifo(event_t *ev) {
-	uint16_t sr;
 	DEBUG_PRINTF_MESSAGE("events_get_from_main_fifo():  (wr: %d, rd:%d, size: %d)\n",
 				events_main_fifo.wr, events_main_fifo.rd, events_main_fifo.size);
     // sanity checks
@@ -301,7 +298,7 @@ static inline uint16_t events_calc_timeout(uint32_t now, uint32_t compare) {
 
 int8_t events_add_single_timer_event(uint16_t timeout, event_t *ev)  {
 	uint32_t new_compare, pos_compare, now = 0;
-    uint16_t sr, pos, pos_timeout, pos_ctrl;
+    uint16_t pos, pos_timeout, pos_ctrl;
 
     // sanity check
 	if(ev == NULL) {

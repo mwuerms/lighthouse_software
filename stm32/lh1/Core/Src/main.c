@@ -726,6 +726,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IS_SDB_GPIO_Port, IS_SDB_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : VBUS_SENSE_Pin */
+  GPIO_InitStruct.Pin = VBUS_SENSE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(VBUS_SENSE_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : SPI1_NSS_Pin SPI1_NSS1_Pin SPI1_NSS2_Pin */
   GPIO_InitStruct.Pin = SPI1_NSS_Pin|SPI1_NSS1_Pin|SPI1_NSS2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;

@@ -27,10 +27,8 @@ __set_PRIMASK(primask);     // Restore previous interrupt state
 */
 
 // save status register + disable global interrupt
-#define lock_interrupt(x) do { \
-	x = __get_PRIMASK(); \
-    __disable_irq(); \
-} while(0)
+#define lock_interrupt(x) uint32_t x = __get_PRIMASK(); \
+                          __disable_irq()
 
 #define restore_interrupt(x) __set_PRIMASK(x)
 

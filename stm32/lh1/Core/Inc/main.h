@@ -68,6 +68,8 @@ extern int8_t main_tid; // task ID
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define VBUS_SENSE_Pin GPIO_PIN_13
+#define VBUS_SENSE_GPIO_Port GPIOC
 #define RTC_CLK_Pin GPIO_PIN_0
 #define RTC_CLK_GPIO_Port GPIOC
 #define VBAT_Pin GPIO_PIN_2

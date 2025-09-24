@@ -45,9 +45,11 @@ void power_mode_request(uint8_t mode) {
 		// unknown power mode
 		return;
 	}
+	lock_interrupt(sr);
 	if(power_mode_cnt[mode] < POWER_MODE_CNT_MAX) {
 		power_mode_cnt[mode]++;
 	}
+	restore_interrupt(sr);
 }
 
 void power_mode_release(uint8_t mode) {
@@ -55,9 +57,11 @@ void power_mode_release(uint8_t mode) {
 		// unknown power mode
 		return;
 	}
+	lock_interrupt(sr);
 	if(power_mode_cnt[mode]) {
 		power_mode_cnt[mode]--;
 	}
+	restore_interrupt(sr);
 }
 
 void power_mode_sleep(void) {
@@ -77,8 +81,11 @@ void power_mode_sleep(void) {
 		default:
 			// - mcu specific code here ------------
 			while (events_is_main_fifo_empty() == true) {
-				// stay here in sleep mode
-				HAL_PWREx_EnterSTOP2Mode(PWR_SLEEPENTRY_WFI);
+				// stay here in stop mode
+				HAL_SuspendTick();
+				HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
+				HAL_ResumeTick();
+				SystemClock_Config();
 			}
 			break;
 	}
