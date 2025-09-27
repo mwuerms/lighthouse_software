@@ -13,6 +13,7 @@
 #include "user_com.h"
 #include "str_buf.h"
 #include "rtc.h"
+#include "alarm.h"
 
 #define USER_COM_STR_BUF_SIZE (1024)
 char user_com_str_buf[USER_COM_STR_BUF_SIZE];
@@ -80,7 +81,7 @@ static uint16_t parse_command(uint8_t *buf, uint32_t len) {
 }
 
 static void send_message(char *msg) {
-	CDC_Transmit_FS((uint8_t *)msg, strlen(msg));
+	CDC_Transmit_FS((uint8_t *)msg, strlen(msg)-1);
 }
 
 static void send_help(void) {
@@ -154,7 +155,7 @@ static void send_help(void) {
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, (char *)commands[CMD_RESTORE]);
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, ": restore settings to default, password needed\n");
 
-	CDC_Transmit_FS((uint8_t *)user_com_str_buf, user_com_str_len);
+	CDC_Transmit_FS((uint8_t *)user_com_str_buf, user_com_str_len-1);
 }
 
 static void send_present_date_time(void) {
@@ -163,7 +164,7 @@ static void send_present_date_time(void) {
 	user_com_str_len = str_buf_clear(user_com_str_buf, USER_COM_STR_BUF_SIZE);
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "present date and time: ");
 	user_com_str_len = str_buf_append_uint16(user_com_str_buf, USER_COM_STR_BUF_SIZE, 2000+year);
-	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "-");
+	/*user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "-");
 	user_com_str_len = str_buf_append_uint8_lead0(user_com_str_buf, USER_COM_STR_BUF_SIZE, month);
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "-");
 	user_com_str_len = str_buf_append_uint8_lead0(user_com_str_buf, USER_COM_STR_BUF_SIZE, day);
@@ -177,8 +178,42 @@ static void send_present_date_time(void) {
 	user_com_str_len = str_buf_append_uint8(user_com_str_buf, USER_COM_STR_BUF_SIZE, weekday);
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, ":");
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, (char *)rtc_weekday_names[weekday]);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "\n");*/
+	CDC_Transmit_FS((uint8_t *)user_com_str_buf, user_com_str_len-1);
+}
+
+uint16_t append_alarm_item(char *str, uint16_t str_size, uint16_t aindex) {
+	alarm_t a;
+	alarm_get_alarm(aindex, &a);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, " [");
+	user_com_str_len = str_buf_append_uint8(user_com_str_buf, USER_COM_STR_BUF_SIZE, aindex);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "] ");
+	user_com_str_len = str_buf_append_uint8_lead0(user_com_str_buf, USER_COM_STR_BUF_SIZE, a.alarm_time.hour);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, ":");
+	user_com_str_len = str_buf_append_uint8_lead0(user_com_str_buf, USER_COM_STR_BUF_SIZE, a.alarm_time.min);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, " ");
+	user_com_str_len = str_buf_append_uint8_lead0(user_com_str_buf, USER_COM_STR_BUF_SIZE, a.alarm_time.wd_mask);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, " ");
+	user_com_str_len = str_buf_append_uint8_lead0(user_com_str_buf, USER_COM_STR_BUF_SIZE, a.state);
 	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "\n");
-	CDC_Transmit_FS((uint8_t *)user_com_str_buf, user_com_str_len);
+	return user_com_str_len;
+}
+
+static void send_alarms(void) {
+	user_com_str_len = str_buf_clear(user_com_str_buf, USER_COM_STR_BUF_SIZE);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "available alarms: ");
+	user_com_str_len = str_buf_append_uint8(user_com_str_buf, USER_COM_STR_BUF_SIZE, ALARMS_SIZE);
+	user_com_str_len = str_buf_append_string(user_com_str_buf, USER_COM_STR_BUF_SIZE, "\n");
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 0);
+	/*user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 1);
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 2);
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 3);
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 4);
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 5);
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 6);
+	user_com_str_len = append_alarm_item(user_com_str_buf, USER_COM_STR_BUF_SIZE, 7);
+	*/
+	CDC_Transmit_FS((uint8_t *)user_com_str_buf, user_com_str_len-1);
 }
 
 static void set_time_from_string(uint8_t *buf, uint32_t len) {
@@ -332,6 +367,8 @@ void user_com_parse(uint8_t *buf, uint32_t len) {
 		set_weekday_from_string(buf, len);
 		break;
 	case CMD_LIST_ALARMS:
+		send_alarms();
+		break;
 	case CMD_SET_ALARM:
 	case CMD_RESTORE:
 	default:

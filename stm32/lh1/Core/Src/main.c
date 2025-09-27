@@ -26,6 +26,7 @@
 #include "leds.h"
 #include "gpios.h"
 #include "rtc.h"
+#include "alarm.h"
 
 /* USER CODE END Includes */
 
@@ -118,7 +119,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+// pfad zu arm-none-eabi-...    /opt/st/stm32cubeide_1.16.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.linux64_1.0.200.202406132123/tools/bin/arm-none-eabi-size
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -173,11 +174,11 @@ int main(void)
   leds_front_dsiplay_set_brightness(test_pwm);
   leds_front_display_update_time(12, 39, 1, 0x37);
 
+  alarm_init();
+  ui_init();
   rtc_init();
   rtc_set_date_time(25, RTC_MONTH_SEPTEMBER, 24, 17, 58, 45, RTC_WEEKDAY_WEDNESDAY);
   rtc_enable_1s_irq();
-
-  ui_init();
 
   // stay in scheduler
   scheduler_run();
