@@ -16,12 +16,14 @@ static RTC_DateTypeDef present_date;
 static RTC_TimeTypeDef present_time;
 
 static inline void update_present_date_time(void) {
-	HAL_RTC_GetDate(&hrtc, &present_date, RTC_FORMAT_BIN);
+	// attention: MUST call HAL_RTC_GetTime() then call HAL_RTC_GetDate()
 	HAL_RTC_GetTime(&hrtc, &present_time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &present_date, RTC_FORMAT_BIN);
 }
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc) {
 	update_present_date_time();
+
 	scheduler_send_event(ui_tid, UI_EV_1S, NULL);
 }
 
@@ -47,6 +49,7 @@ void rtc_set_date_time(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, u
 	RTC_TimeTypeDef set_time = {.Hours = hour, .Minutes = min, .Seconds = sec};
 	HAL_RTC_SetTime(&hrtc, &set_time, RTC_FORMAT_BIN);
 	HAL_RTC_SetDate(&hrtc, &set_date, RTC_FORMAT_BIN);
+
 	scheduler_send_event(ui_tid, UI_EV_TIME_UPDATE, NULL);
 }
 

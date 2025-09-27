@@ -8,7 +8,7 @@
 #ifndef INC_UI_H_
 #define INC_UI_H_
 
-extern int8_t ui_tid;
+volatile extern int8_t ui_tid;
 #define UI_EV_1S (1)
 #define UI_EV_TIME_UPDATE (2)
 #define UI_EV_BUTTON0 (3)

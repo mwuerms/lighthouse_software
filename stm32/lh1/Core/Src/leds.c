@@ -45,15 +45,19 @@
 // from main.c/h I2C_HandleTypeDef hi2c1;
 
 // - private functions ---------------------------------------------------------
-
+volatile uint32_t led_front_last_i2c_transfer = 0;
 static void i2c_Send(uint8_t reg_addr, uint8_t *buffer, uint32_t size) {
 	uint8_t tx_buf[] = {0xFD, reg_addr};
 	HAL_I2C_Master_Transmit(&hi2c1, cI2C_ADDR_WR, tx_buf, sizeof(tx_buf), HAL_MAX_DELAY);
-	HAL_I2C_Master_Transmit(&hi2c1, cI2C_ADDR_WR, buffer, size, HAL_MAX_DELAY);
+	if(HAL_I2C_Master_Transmit(&hi2c1, cI2C_ADDR_WR, buffer, size, HAL_MAX_DELAY) == HAL_OK ) {
+		led_front_last_i2c_transfer = 1;
+	} else {
+		led_front_last_i2c_transfer = 0;
+	}
 }
 
 // - public functions ----------------------------------------------------------
-uint8_t leds_front_display_weekday_mask[8] = {0x00, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+uint8_t leds_front_display_weekday_mask[8] = {0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40};
 
 void leds_init(void) {
 	return;
@@ -252,19 +256,19 @@ void leds_front_display_update_time(uint8_t hour, uint8_t min, uint8_t colon, ui
 // always write a whole frame
 // other idea: set 2 frames and switch between both frames, less i2c trafic every 1 s
 void leds_front_display_update_colon(uint8_t colon) {
-	uint8_t pos;
+	uint8_t n, pos;
 	i2c_led_frame_buffer.reg_addr = 0;
 	// pwm_reg_pos_colon
-	/*for(n = 0; n < char_colon_len; n++) {
+	for(n = 0; n < char_colon_len; n++) {
 		pos = pwm_reg_pos_colon[char_colon_pos[n]];
 		if(colon) {
-			i2c_led_frame_buffer.pwm_reg[pos] = pwm;
+			i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 		}
 		else {
 			i2c_led_frame_buffer.pwm_reg[pos] = 0;
 		}
-	}*/
-	if(colon) {
+	}
+	/*if(colon) {
 		pos = pwm_reg_pos_colon[0];
 		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
 		pos = pwm_reg_pos_colon[1];
@@ -283,7 +287,7 @@ void leds_front_display_update_colon(uint8_t colon) {
 		i2c_led_frame_buffer.pwm_reg[pos] = 0;
 		pos = pwm_reg_pos_colon[3];
 		i2c_led_frame_buffer.pwm_reg[pos] = front_pwm;
-	}
+	}*/
 
 	i2c_Send(cFRAME_1_REG_ADDR, (uint8_t *)&i2c_led_frame_buffer, I2C_LED_FRAME_SIZE);
 }

@@ -56,7 +56,7 @@ static inline uint32_t get_command_len(uint16_t cmd_index) {
 static uint16_t compare_command(uint16_t cmd_index, uint8_t *buf, uint32_t len) {
 	uint16_t n, cmd_len;
 	cmd_len = get_command_len(cmd_index);
-	if(len > cmd_len) {
+	if(len < cmd_len) {
 		return false;
 	}
 	// strcmp does not work here, check from beginning up to cmd_len
@@ -198,7 +198,7 @@ static void set_time_from_string(uint8_t *buf, uint32_t len) {
 		send_message("error, invalid command 2, format must be: set time hh:mm:ss\n");
 		return;
 	}
-	pos += 4;
+	pos += 2;
 	if(buf[pos] != ':') {
 		send_message("error, invalid command 3, format must be: set time hh:mm:ss\n");
 		return;
@@ -285,17 +285,17 @@ static void set_weekday_from_string(uint8_t *buf, uint32_t len) {
 	uint16_t pos = get_command_len(CMD_SET_WEEKDAY);
 	if(len < strlen("set weekday n")) {
 		// error, command was not long enough
-		send_message("error, invalid command 0, format must be: set weekday n\n");
+		send_message("error, invalid command 0, format must be: set weekday n (1 ... 7)\n");
 		return;
 	}
 	if(buf[pos] != ' ') {
-		send_message("error, invalid command 1, format must be: set weekday n\n");
+		send_message("error, invalid command 1, format must be: set weekday n (1 ... 7)\n");
 		return;
 	}
 	pos++;
 	uint8_t wd = (uint8_t)atoi((char *)&buf[pos]);
 	if((wd == 0) || (wd > 7)) {
-		send_message("error, invalid command 2, format must be: set weekday n\n");
+		send_message("error, invalid command 2, format must be: set weekday n (1 ... 7)\n");
 		return;
 	}
 
@@ -312,7 +312,7 @@ void user_com_parse(uint8_t *buf, uint32_t len) {
 	uint16_t cmd = parse_command(buf, len);
 	switch(cmd) {
 	case INVALID_COMMAND:
-		send_message("invalid command, send ?, h or help for help");
+		send_message("invalid command, send ?, h or help for help\n");
 	case CMD_GET_HELP_0:
 	case CMD_GET_HELP_1:
 	case CMD_GET_HELP_2:
